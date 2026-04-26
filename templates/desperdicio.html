@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-1">🗑️ Controle Operacional e Desperdício</h2>
+            <p class="text-muted small">Registre manualmente as saídas de ingredientes ou a produção de fichas técnicas para manter o estoque redondo.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100 border-0" style="border-top: 4px solid #0D0BFD !important;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">🍕 Produção de Pizzas (Ficha Técnica)</h5>
+                    
+                    <form action="/baixa_receita" method="POST"> 
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">O que foi preparado?</label>
+                            <select name="receita_id" class="form-select select2-operacional" required>
+                                <option value="">Pesquise a pizza ou prato...</option>
+                                {% for r in todas_receitas %}
+                                <option value="{{ r.id }}">{{ r.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <label class="form-label fw-bold small">Quantas unidades?</label>
+                                <input type="number" name="quantidade" class="form-control" value="1" min="0.5" step="0.1" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold small">Motivo</label>
+                                <select name="motivo" class="form-select" required>
+                                    <option value="Venda/Produção">Venda/Produção</option>
+                                    <option value="Desperdício/Erro">Desperdício/Erro</option>
+                                    <option value="Consumo Interno">Consumo Interno</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-custom-azul w-100 text-white fw-bold py-2 shadow-sm">
+                            Descontar Todos os Ingredientes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100 border-0" style="border-top: 4px solid #ffc107 !important;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">🧂 Ingrediente Avulso (Baixa Manual)</h5>
+                    
+                    <form action="/baixa_inteligente" method="POST"> 
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Produto</label>
+                            <select name="produto_id" id="produto_baixa" class="form-select select2-operacional" onchange="atualizarUnidadeBaixa()" required>
+                                <option value="">Selecione o produto...</option>
+                                {% for p in todos_produtos %}
+                                <option value="{{ p.id }}" data-unidade="{{ p.unidade }}">{{ p.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Quantidade</label>
+                            <div class="input-group">
+                                <input type="number" name="quantidade" class="form-control" placeholder="Ex: 200" min="0.01" step="0.01" required>
+                                <select name="unidade" id="unidade_baixa" class="form-select" style="max-width: 120px;" required>
+                                    <option value="">---</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Motivo</label>
+                            <select name="motivo" class="form-select" required>
+                                <option value="Uso na Cozinha">Uso na Cozinha</option>
+                                <option value="Descarte/Vencimento">Descarte/Vencimento</option>
+                                <option value="Avaria/Acidente">Avaria/Acidente</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning w-100 fw-bold py-2 shadow-sm text-dark">
+                            Confirmar Baixa Manual
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    // Função para alterar a caixa de unidade (Kg -> g, L -> ml) baseada no produto selecionado
+    function atualizarUnidadeBaixa() {
+        var selectProduto = document.getElementById('produto_baixa');
+        var selectUnidade = document.getElementById('unidade_baixa');
+
+        if (selectProduto.selectedIndex === 0) {
+            selectUnidade.innerHTML = '<option value="">---</option>';
+            return;
+        }
+
+        var unidade = selectProduto.options[selectProduto.selectedIndex].getAttribute('data-unidade').toUpperCase();
+        selectUnidade.innerHTML = ''; 
+
+        if (unidade === 'KG') {
+            selectUnidade.innerHTML = '<option value="g">Gramas (g)</option><option value="KG">Quilos (KG)</option>';
+        } else if (unidade === 'L' || unidade === 'LITRO') {
+            selectUnidade.innerHTML = '<option value="ml">Mililitros (ml)</option><option value="L">Litros (L)</option>';
+        } else {
+            selectUnidade.innerHTML = `<option value="${unidade}">${unidade}</option>`;
+        }
+    }
+
+    // Ativa o campo de busca bonito nos dropdowns
+    $(document).ready(function () {
+        $('.select2-operacional').select2({ 
+            width: '100%', 
+            language: { noResults: function () { return "Não encontrado"; } } 
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🤝 Gerenciar Fornecedores</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoFornecedor">
+            ➕ Novo Fornecedor
+        </button>
+    </div>
+
+    <div class="card shadow-sm p-3">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome do Fornecedor</th>
+                        <th>Contato (WhatsApp)</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in fornecedores %}
+                    <tr>
+                        <td>{{ f.id }}</td>
+                        <td class="fw-bold">{{ f.nome }}</td>
+                        <td>
+                            {% if f.contato %}
+                            <span class="d-none d-lg-inline me-2">{{ f.contato }}</span>
+                            {% else %}
+                            <span class="text-muted small">Sem contato</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+
+                            {% if f.contato %}
+                            <a href="whatsapp://send?phone=55{{ f.contato | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') }}"
+                                class="btn btn-sm btn-success fw-bold text-white" title="Chamar no WhatsApp">
+                                <i class="fab fa-whatsapp"></i> Chamar
+                            </a>
+                            {% endif %}
+                            <a href="/editar_fornecedor/{{ f.id }}" class="btn btn-sm btn-outline-primary">✏️ Editar</a>
+                            <a href="/deletar_fornecedor/{{ f.id }}" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Certeza que deseja remover este fornecedor?')">🗑️ Remover</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">Nenhum fornecedor cadastrado ainda.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNovoFornecedor" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/cadastrar_fornecedor" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Novo Fornecedor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nome da Empresa</label>
+                        <input type="text" name="nome" class="form-control" maxlength="120" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">WhatsApp com DDD</label>
+                        <input type="text" name="contato" class="form-control"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')" maxlength="11"
+                            placeholder="Ex: 11999998888">
+                        <div class="form-text">Apenas números para o link do WhatsApp funcionar perfeitamente.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Fornecedor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gerenciar: <span class="text-danger">{{ produto.nome }}</span></h2>
+    <div>
+        <a href="/produto/historico/{{ produto.id }}" class="btn btn-outline-primary btn-sm">📜 Ver Movimentação
+            Completa</a>
+        <a href="/produtos" class="btn btn-secondary btn-sm">Voltar</a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card p-3 border-start border-4 border-info shadow-sm">
+            <small class="text-muted fw-bold">GASTO MENSAL DESTE PRODUTO</small>
+            <h4 class="mb-0 text-info">R$ {{ "%.2f"|format(gasto_mensal) }}</h4>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3 border-start border-4 border-dark shadow-sm">
+            <form class="d-flex gap-2 align-items-end" method="GET">
+                <div class="flex-grow-1">
+                    <small class="text-muted fw-bold">FILTRAR TOTAL POR PERÍODO</small>
+                    <h4 class="mb-0">R$ {{ "%.2f"|format(gasto_total_periodo) }}</h4>
+                </div>
+                <input type="date" name="data_inicio" class="form-control form-control-sm w-auto"
+                    value="{{ data_inicio }}">
+                <input type="date" name="data_fim" class="form-control form-control-sm w-auto" value="{{ data_fim }}">
+                <button type="submit" class="btn btn-sm btn-dark">Filtrar</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card p-4 shadow-sm">
+            <h5>Adicionar Nova Leva</h5>
+            <form action="/adicionar_lote" method="POST">
+                <input type="hidden" name="produto_id" value="{{ produto.id }}">
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Unidade de Entrada</label>
+                    <select name="unidade_entrada" class="form-select">
+                        {% if produto.unidade == 'KG' %}
+                        <option value="g">Gramas (g)</option>
+                        <option value="KG" selected>Quilos (KG)</option>
+                        {% elif produto.unidade == 'L' %}
+                        <option value="ml">Mililitros (ml)</option>
+                        <option value="L" selected>Litros (L)</option>
+                        {% else %}
+                        <option value="UN" selected>Unidade (UN)</option>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Quantidade</label>
+                    <input type="number"  name="quantidade" class="form-control" placeholder="Ex: 500 ou 2.5" min="0" max="999"
+                        required>
+                    <div class="form-text">Se selecionar 'g' ou 'ml', digite o valor inteiro (ex: 500).</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Custo por {{ produto.unidade }}</label>
+                    <div class="input-group">
+                        <span class="input-group-text">R$</span>
+                        <input type="number" step="0.01" name="valor" class="form-control"
+                            placeholder="Preço total do KG/L" min="0" max="999" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Validade</label>
+                    <input type="date" name="validade" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Fornecedor</label>
+                    <select name="fornecedor_id" class="form-select" required>
+                        {% for f in fornecedores %}
+                        <option value="{{ f.id }}">{{ f.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 fw-bold">Registrar Entrada ✅</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card p-4 shadow-sm">
+            <h5>Estoque Físico Atual</h5>
+            <table class="table table-hover table-sm mt-2 align-middle">
+                <thead>
+                    <tr>
+                        <th>Entrada</th>
+                        <th>Qtd</th>
+                        <th>Custo Unit.</th>
+                        <th>Valor Pago</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lote in produto.lotes %}
+                    <tr class="{% if lote.validade <= hoje %}table-danger{% endif %}">
+                        <td>{{ lote.data_entrada.strftime('%d/%m/%y') }}</td>
+                        <td>{{ lote.quantidade }} {{ produto.unidade }}</td>
+                        <td>R$ {{ "%.2f"|format(lote.valor_custo) }}</td>
+                        <td><strong>R$ {{ "%.2f"|format(lote.quantidade * lote.valor_custo) }}</strong></td>
+                        <td>
+                            <a href="/remover_lote/{{ lote.id }}" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Remover do estoque?')">🗑️</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+    :root {
+        --pizza-red: #C0392B;
+        --cheese-yellow: #F1C40F;
+        --dough-beige: #FEF9E7;
+        --text-dark: #2C3E50;
+    }
+
+    body {
+        background-color: var(--dough-beige);
+        color: var(--text-dark);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-success {
+        background-color: #27AE60;
+        border: none;
+    }
+
+    .btn-success:hover {
+        background-color: #219150;
+    }
+
+    .table th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+</style>
+
+{% endblock %}

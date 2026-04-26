@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Recibo Venda #{{ venda.id }}</title>
+    <style>
+        /* Estilos focados para Impressora Térmica 80mm */
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px; /* Aumentei um pouco a fonte base */
+            color: #000;
+            background-color: #fff;
+            margin: 0 auto;
+            padding: 10px;
+            width: 300px;
+        }
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .fw-bold { font-weight: bold; }
+
+        .divider {
+            border-top: 1px dashed #000;
+            margin: 8px 0;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 2px 0; vertical-align: top; }
+        th.right, td.right { text-align: right; }
+
+        .cabecalho h2 { margin: 0; font-size: 16px; }
+        .cabecalho p { margin: 2px 0; }
+
+        /* 🔥 HACK PARA IMPRESSORA TÉRMICA: FORÇA O PRETO MÁXIMO E TIRA O SUAVIZADO 🔥 */
+        @media print {
+            body {
+                padding: 0;
+                margin: 0;
+                color: #000000 !important;
+                font-weight: 800 !important; /* Força negrito em tudo */
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                /* O text-shadow abaixo engrossa os pixels da fonte forçando o calor da bobina */
+                text-shadow: 0px 0px 1px rgba(0,0,0,1); 
+            }
+            .fw-bold { font-weight: 900 !important; }
+            .divider { border-top: 2px dashed #000 !important; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="cabecalho text-center">
+        <h2>{{ conf.nome_empresa | default('DOMINUS PDV') }}</h2>
+        <p>CUPOM NÃO FISCAL</p>
+        <p>Venda #{{ '%05d' | format(venda.id) }}</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+        <p class="fw-bold" style="margin: 3px 0;">DATA: <span style="font-weight: normal;">{{ venda.data_venda.strftime('%d/%m/%Y %H:%M') }}</span></p>
+        <p class="fw-bold" style="margin: 3px 0;">CAIXA: <span style="font-weight: normal;">{{ venda.vendedor | upper }}</span></p>
+
+        {% if venda.cliente %}
+        <p class="fw-bold" style="margin: 5px 0 2px 0;">CLIENTE: <span style="font-weight: normal;">{{ venda.cliente.nome }}</span></p>
+        {% endif %}
+
+        {% if venda.entregador %}
+        <p class="fw-bold" style="margin: 3px 0;">MODO: <span style="font-weight: normal;">ENTREGA</span></p>
+        {% else %}
+        <p class="fw-bold" style="margin: 3px 0;">MODO: <span style="font-weight: normal;">BALCÃO</span></p>
+        {% endif %}
+    </div>
+
+    <div class="divider"></div>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px;">
+        <thead>
+            <tr style="border-bottom: 2px solid #000;">
+                <th style="text-align: left; padding-bottom: 3px;">Qtd</th>
+                <th style="text-align: left; padding-bottom: 3px;">Descrição</th>
+                <th style="text-align: right; padding-bottom: 3px;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in itens_agrupados %}
+            <tr style="border-bottom: 1px dashed #ccc;">
+                <td style="padding: 5px 0; vertical-align: top;" class="fw-bold">{{ item.qtd | int }}x</td>
+                
+                <td style="padding: 5px; vertical-align: top; word-break: break-word;">
+                    {% if '(' in item.nome and 'Pizza' in item.nome %}
+                        {% set partes = item.nome.split('(') %}
+                        {% set nome_pizza = partes[0] %}
+                        {% set sabores_str = partes[1].split(')')[0] %}
+                        
+                        <span class="fw-bold">{{ nome_pizza }}</span><br>
+                        
+                        {% set sabores_lista = sabores_str.split(',') %}
+                        {% set fracao = "1/" ~ sabores_lista|length %}
+                        
+                        {% for sabor in sabores_lista %}
+                            &nbsp;&nbsp;{{ fracao }} {{ sabor.strip() }}<br>
+                        {% endfor %}
+                        
+                        {% if '[Obs:' in item.nome %}
+                            {% set obs = item.nome.split('[Obs:')[1].split(']')[0] %}
+                            &nbsp;&nbsp;<i>Obs: {{ obs.strip() }}</i>
+                        {% endif %}
+                    {% else %}
+                        <span class="fw-bold">{{ item.nome }}</span>
+                    {% endif %}
+                </td>
+                
+                <td style="padding: 5px; text-align: right; vertical-align: top;" class="fw-bold">{{ item.valor | moeda_br }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="divider"></div>
+
+    <table style="width: 100%; font-family: monospace; font-size: 14px;">
+        <tr>
+            <td class="fw-bold text-left">PAGAMENTO:</td>
+            <td class="fw-bold text-right">{{ venda.forma_pagamento }}</td>
+        </tr>
+        
+        {% if venda.taxa_entrega and venda.taxa_entrega > 0 %}
+        <tr>
+            <td class="text-left" style="padding-top: 4px;">TAXA DE ENTREGA:</td>
+            <td class="text-right" style="padding-top: 4px;">R$ {{ "%.2f" | format(venda.taxa_entrega) | replace('.', ',') }}</td>
+        </tr>
+        {% endif %}
+
+        {% if venda.desconto and venda.desconto > 0 %}
+        <tr>
+            <td class="fw-bold text-left" style="padding-top: 4px;">DESCONTO:</td>
+            <td class="fw-bold text-right" style="padding-top: 4px;">- R$ {{ "%.2f" | format(venda.desconto) | replace('.', ',') }}</td>
+        </tr>
+        {% endif %}
+
+        <tr>
+            <td class="fw-bold text-left" style="font-size: 16px; padding-top: 8px;">TOTAL:</td>
+            <td class="fw-bold text-right" style="font-size: 16px; padding-top: 8px;">R$ {{ "%.2f" | format(venda.valor_total) | replace('.', ',') }}</td>
+        </tr>
+    </table>
+
+    <div class="divider"></div>
+    <p class="text-center fw-bold">Agradecemos a preferência!</p>
+</body>
+</html>

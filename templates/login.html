@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card p-4 shadow">
+            <h3 class="text-center mb-4">🍕 PizzaStock Login</h3>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} small text-center">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Usuário</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Senha</label>
+                    <div class="input-group">
+                        <input type="password" name="password" id="senha_login" class="form-control" required>
+                        
+                        <button class="btn btn-outline-secondary" type="button" 
+                                onclick="mostrarSenha('senha_login', 'icone_login')" 
+                                style="border-color: #ced4da; background-color: white;">
+                            <i id="icone_login" class="bi bi-eye text-secondary"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-danger w-100 fw-bold">Entrar</button>
+                
+                <div class="text-center mt-3">
+                    <a href="/esqueci_senha" class="text-decoration-none small text-muted">Esqueceu sua senha?</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function mostrarSenha(inputId, iconId) {
+        var campoInput = document.getElementById(inputId);
+        var icone = document.getElementById(iconId);
+
+        if (campoInput.type === "password") {
+            campoInput.type = "text";
+            icone.classList.remove("bi-eye");
+            icone.classList.add("bi-eye-slash");
+        } else {
+            campoInput.type = "password";
+            icone.classList.remove("bi-eye-slash");
+            icone.classList.add("bi-eye");
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm border-0 mb-4 bg-light"
+            style="border-top: 4px solid var(--cor-azul) !important;">
+            <h5 class="mb-3 fw-bold" style="color: var(--cor-azul);"><i class="fas fa-user-plus"></i> Novo Colaborador
+            </h5>
+            <form action="/usuarios" method="POST">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Nome de Usuário</label>
+                    <input type="text" name="username" maxlength="30" class="form-control"
+                        placeholder="ex: joao.pizzaiolo" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Senha Inicial</label>
+                    <input type="password" name="password" maxlength="30" class="form-control"
+                        placeholder="Senha segura" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">E-mail</label>
+                    <input type="email" name="email" class="form-control" placeholder="colaborador@pizzaria.com"
+                        required>
+                </div>
+                <button type="submit" class="btn btn-custom-azul w-100 fw-bold shadow-sm">Criar Acesso</button>
+            </form>
+            <div class="alert alert-warning mt-4 mb-0 small border-0 shadow-sm text-dark"
+                style="background-color: var(--cor-fundo);">
+                <strong><i class="fas fa-lightbulb text-warning"></i> Dica de Segurança:</strong> Os nomes de usuário
+                são convertidos automaticamente para minúsculas.
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-users-cog"></i> Colaboradores com Acesso</h5>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr style="border-top: 3px solid var(--cor-amarelo);">
+                                <th class="ps-4">ID</th>
+                                <th>Nome de Usuário</th>
+                                <th>Permissão</th>
+                                <th class="text-end pe-4">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in usuarios %}
+                            {# 👇 ADICIONE ESTA LINHA AQUI 👇 #}
+                            {% if u.username != 'admin' %}
+                            <tr>
+                                <td class="text-muted fw-bold ps-4">#{{ u.id }}</td>
+                                <td>
+                                    <span class="fw-bold text-dark">{{ u.username }}</span>
+                                </td>
+                                <td>
+                                    {% if u.is_admin %}
+                                    <span class="badge bg-custom-vermelho ms-2 shadow-sm"><i class="fas fa-star"></i>
+                                        Admin</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="/editar_usuario/{{ u.id }}" class="btn btn-sm btn-custom-amarelo">
+                                        ✏️ Editar
+                                    </a>
+
+                                    {% if current_user.is_admin and u.id != current_user.id %}
+                                    <a href="/deletar_usuario/{{ u.id }}"
+                                        class="btn btn-sm btn-custom-vermelho-outline ms-1"
+                                        onclick="return confirm('ATENÇÃO: Deseja remover permanentemente o acesso de {{ u.username }}?')">
+                                        🗑️ Excluir
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %} 
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

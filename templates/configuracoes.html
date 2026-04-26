@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container-fluid mt-2 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark"><i class="fas fa-cogs"></i> Configurações do Sistema</h2>
+    </div>
+
+    <ul class="nav nav-pills mb-4 shadow-sm p-2 bg-white rounded" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="pills-geral-tab" data-bs-toggle="pill"
+                data-bs-target="#pills-geral" type="button" role="tab"><i class="fas fa-home me-2"></i>Geral</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold " id="pills-financeiro-tab" data-bs-toggle="pill"
+                data-bs-target="#pills-financeiro" type="button" role="tab"><i
+                    class="fas fa-money-check-alt me-2"></i>Financeiro</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="pills-logo-tab" data-bs-toggle="pill" data-bs-target="#pills-logo"
+                type="button" role="tab"><i class="fas fa-image me-2"></i>Foto / Logo</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="pills-impressao-tab" data-bs-toggle="pill"
+                data-bs-target="#pills-impressao" type="button" role="tab"><i
+                    class="fas fa-print me-2"></i>Impressão</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="pills-email-tab" data-bs-toggle="pill" data-bs-target="#pills-email"
+                type="button" role="tab"><i class="fas fa-envelope me-2"></i>E-mail</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="pills-backup-tab" data-bs-toggle="pill" data-bs-target="#pills-backup"
+                type="button" role="tab"><i class="fas fa-database me-2"></i>Backup</button>
+        </li>
+    </ul>
+
+    <form action="/configuracoes" method="POST" enctype="multipart/form-data">
+        <div class="tab-content" id="pills-tabContent">
+
+            <div class="tab-pane fade show active" id="pills-geral" role="tabpanel">
+                <div class="card shadow-sm border-0 p-4">
+                    <h5 class="fw-bold mb-3">Dados da Empresa</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-muted">Nome de Exibição do Sistema</label>
+                            <input type="text" class="form-control" name="nome_empresa" value="{{ conf.nome_empresa }}"
+                                required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-muted">🛵 Taxa de Entrega Padrão
+                                (Global)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-success fw-bold">R$</span>
+                                <input type="number" step="0.01" class="form-control fw-bold text-success"
+                                    name="taxa_entrega_padrao" value="{{ conf.taxa_entrega_padrao or 0.00 }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pills-logo" role="tabpanel">
+                <div class="card shadow-sm border-0 p-4">
+                    <h5 class="fw-bold mb-3">Identidade Visual</h5>
+                    <div class="row align-items-center">
+                        <div class="col-md-4 text-center">
+                            <label class="d-block mb-2 small fw-bold text-muted">Logo Atual</label>
+                            <div class="p-3 border rounded bg-light d-flex align-items-center justify-content-center"
+                                style="height: 150px;">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small text-muted">Alterar Logomarca</label>
+                            <input class="form-control" type="file" name="logo" accept="image/png, image/jpeg">
+                            <p class="form-text small mt-2">Recomendado: PNG fundo transparente ou JPG (300x300px).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pills-impressao" role="tabpanel">
+                <div class="card shadow-sm border-0 p-4">
+                    <h5 class="fw-bold mb-3">Configuração de Impressão</h5>
+                    <label class="form-label fw-bold small text-muted">Selecione a Impressora Térmica (PDV)</label>
+                    <select name="nome_impressora" class="form-select mb-3">
+                        <option value="">-- Usar Impressora Padrão do Windows --</option>
+                        {% for imp in impressoras_windows %}
+                        <option value="{{ imp }}" {% if conf and conf.nome_impressora==imp %}selected{% endif %}>{{ imp
+                            }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="alert alert-info small border-0 shadow-sm">
+                        <i class="fas fa-info-circle"></i> O sistema enviará os cupons diretamente para esta impressora
+                        após cada venda finalizada.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pills-financeiro" role="tabpanel">
+                <div class="card shadow-sm border-0 p-4 mb-4"
+                    style="border-top: 4px solid var(--bs-success) !important;">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-credit-card text-success me-2"></i>Taxas da Maquininha
+                        (Cartões)</h5>
+                    <p class="small text-muted mb-4">Configure as taxas cobradas pela sua adquirente (Stone, PagSeguro,
+                        Cielo, etc) para calcular o <strong>Valor Líquido</strong> exato das suas vendas.</p>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded border border-secondary border-opacity-25">
+                                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-credit-card me-2"></i>Cartão de
+                                    Crédito</h6>
+
+                                <label class="form-label fw-bold small text-muted">Taxa Cobrada (%)</label>
+                                <div class="input-group mb-3 shadow-sm">
+                                    <input type="number" step="0.01" min="0" class="form-control fw-bold"
+                                        name="taxa_credito" value="{{ conf.taxa_credito or 3.19 }}">
+                                    <span class="input-group-text bg-white fw-bold">%</span>
+                                </div>
+
+                                <label class="form-label fw-bold small text-muted">Prazo de Recebimento (Dias)</label>
+                                <div class="input-group shadow-sm">
+                                    <input type="number" step="1" min="0" class="form-control" name="prazo_credito"
+                                        value="{{ conf.prazo_credito or 30 }}">
+                                    <span class="input-group-text bg-white small">Dias</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded border border-secondary border-opacity-25">
+                                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-credit-card me-2"></i>Cartão de
+                                    Débito</h6>
+
+                                <label class="form-label fw-bold small text-muted">Taxa Cobrada (%)</label>
+                                <div class="input-group mb-3 shadow-sm">
+                                    <input type="number" step="0.01" min="0" class="form-control fw-bold"
+                                        name="taxa_debito" value="{{ conf.taxa_debito or 1.99 }}">
+                                    <span class="input-group-text bg-white fw-bold">%</span>
+                                </div>
+
+                                <label class="form-label fw-bold small text-muted">Prazo de Recebimento (Dias)</label>
+                                <div class="input-group shadow-sm">
+                                    <input type="number" step="1" min="0" class="form-control" name="prazo_debito"
+                                        value="{{ conf.prazo_debito or 1 }}">
+                                    <span class="input-group-text bg-white small">Dias</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pills-email" role="tabpanel">
+                <div class="card shadow-sm border-0 p-4">
+                    <h5 class="fw-bold mb-3">Servidor de E-mail (Gmail)</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-muted">E-mail Remetente</label>
+                            <input type="email" name="email_remetente" class="form-control"
+                                value="{{ conf.email_remetente or '' }}" placeholder="exemplo@gmail.com">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-muted">Senha de App (16 letras)</label>
+                            <input type="password" name="senha_app_email" class="form-control"
+                                value="{{ conf.senha_app_email or '' }}" placeholder="xxxxxxxxxxxxxxxx">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pills-backup" role="tabpanel">
+
+                <div class="card shadow-sm border-0 p-4 mb-3">
+                    <h5 class="fw-bold mb-3 text-info"><i class="fas fa-hdd"></i> Motor de Backup Automático</h5>
+                    <p class="small text-muted mb-4">O sistema fará uma cópia de segurança invisível todos os dias neste
+                        horário e enviará para esta pasta.</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small text-muted">Pasta de Destino do Backup (Pen Drive ou
+                                HD)</label>
+                            <div class="input-group">
+                                <input type="text" name="caminho_backup" id="inputCaminhoBackup"
+                                    class="form-control border-info"
+                                    value="{{ conf.caminho_backup or 'C:\\PizzaStock_Backups' }}"
+                                    placeholder="Ex: D:\Backups" required>
+                                <button class="btn btn-info fw-bold text-white" type="button"
+                                    onclick="testarESalvarRota()">
+                                    <i class="fas fa-check-circle"></i> Testar Rota
+                                </button>
+                            </div>
+                            <small id="statusCaminho" class="form-text mt-1 d-block"></small>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Horário da Cópia</label>
+                            <input type="time" name="horario_backup" class="form-control border-info"
+                                value="{{ conf.horario_backup or '03:00' }}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 p-4 border-top border-danger">
+                    <h5 class="fw-bold text-danger mb-3"><i class="fas fa-toolbox"></i> Manutenção Manual</h5>
+                    <div class="row align-items-center g-3">
+
+                        <div class="col-md-4">
+                            <p class="small text-muted mb-2">Salva um .ZIP com o banco na pasta configurada acima.</p>
+                            <button type="button" class="btn btn-primary fw-bold w-100" onclick="fazerBackup()">
+                                <i class="fas fa-file-archive"></i> Gerar .ZIP na Pasta
+                            </button>
+                        </div>
+
+                        <div class="col-md-4">
+                            <p class="small text-muted mb-2">Restaure o sistema em caso de formatação.</p>
+                            <button type="button" class="btn btn-outline-danger fw-bold w-100" data-bs-toggle="collapse"
+                                data-bs-target="#collapseRestore">
+                                <i class="fas fa-upload"></i> Importar Backup
+                            </button>
+                        </div>
+
+                    </div>
+
+                    <div class="collapse mt-3" id="collapseRestore">
+                        <div class="card card-body bg-light border-danger border-opacity-50">
+                            <p class="text-danger fw-bold small mb-2">
+                                <i class="fas fa-exclamation-triangle"></i> ATENÇÃO: Ao restaurar um backup, todos os
+                                dados atuais serão substituídos.
+                            </p>
+
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="file" name="arquivo_db" class="form-control form-control-sm border-danger"
+                                    accept=".db">
+
+                                <button type="submit" formaction="/restaurar_backup"
+                                    class="btn btn-danger btn-sm fw-bold px-4"
+                                    onclick="return confirm('Tem certeza? O sistema será reiniciado e esta ação apagará os dados atuais.')">
+                                    Restaurar Banco
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-3 fs-5 shadow">
+                <i class="fas fa-save me-2"></i>Salvar Todas as Configurações
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Função para testar a rota sem recarregar a página
+    function testarESalvarRota() {
+        let caminhoInput = document.getElementById('inputCaminhoBackup').value.trim();
+        let status = document.getElementById('statusCaminho');
+
+        if (caminhoInput === "") {
+            Swal.fire('Aviso', 'Digite ou cole o caminho da pasta primeiro.', 'warning');
+            return;
+        }
+
+        status.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin"></i> Verificando acesso à pasta...</span>';
+
+        fetch('/api/salvar_rota_backup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ caminho: caminhoInput })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    status.innerHTML = `<span class="text-success fw-bold"><i class="fas fa-check"></i> O Windows confirmou acesso à pasta. Rota salva!</span>`;
+                } else {
+                    status.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-times"></i> Erro: ${data.erro}</span>`;
+                    Swal.fire('Erro na Rota', data.erro, 'error');
+                }
+            })
+            .catch(err => {
+                status.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-times"></i> Falha de comunicação com o servidor.</span>`;
+            });
+    }
+
+    // Função para fazer o backup via rota da API
+    function fazerBackup() {
+        Swal.fire({
+            title: 'Gerando Backup...',
+            text: 'Aguarde um momento, compactando banco de dados.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        fetch('/api/fazer_backup_manual', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    Swal.fire('Pronto!', `Backup gerado com sucesso na pasta selecionada.`, 'success');
+                } else {
+                    Swal.fire('Erro', data.erro, 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                Swal.fire('Erro', 'Falha ao comunicar com o servidor de backup.', 'error');
+            });
+    }
+</script>
+
+<style>
+    .nav-pills .nav-link {
+        color: #555;
+        transition: 0.3s;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: var(--cor-azul) !important;
+        color: white !important;
+    }
+
+    .nav-pills .nav-link:hover:not(.active) {
+        background-color: #f8f9fa;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+</style>
+
+{% endblock %}

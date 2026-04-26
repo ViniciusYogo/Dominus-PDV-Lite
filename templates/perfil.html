@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+    /* Cores fiéis à imagem de referência */
+    .btn-blue-system {
+        background-color: #3b6baf;
+        color: white;
+        font-weight: 700;
+        font-size: 0.85rem;
+        border-radius: 4px;
+        border: none;
+    }
+    .btn-blue-system:hover {
+        background-color: #2b528a;
+        color: white;
+    }
+    
+    .btn-grey-system {
+        background-color: #6b737b;
+        color: white;
+        font-weight: 700;
+        font-size: 0.85rem;
+        border-radius: 4px;
+        border: none;
+    }
+    .btn-grey-system:hover {
+        background-color: #545b62;
+        color: white;
+    }
+
+    .btn-green-save {
+        background-color: #4cd171;
+        color: white;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 10px 30px;
+        border-radius: 2px;
+        border: none;
+    }
+    .btn-green-save:hover {
+        background-color: #3eb55f;
+        color: white;
+    }
+
+    .header-system {
+        background-color: #f4f5f7;
+        border-bottom: 1px solid #e0e0e0;
+        color: #333;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="container mt-4 mb-5" style="max-width: 800px;">
+    <div class="card shadow-sm border-0 rounded-0">
+        
+        <div class="card-header header-system py-3 text-uppercase">
+            EDITAR FOTO: {{ current_user.username }}
+        </div>
+
+        <div class="card-body text-center py-5 bg-white">
+            
+            <form id="formPerfil" action="/perfil" method="POST" enctype="multipart/form-data">
+                
+                <div class="mb-4">
+                    {% if current_user.foto_perfil == 'default.png' %}
+                        <img id="previewImagem" src="https://ui-avatars.com/api/?name={{ current_user.username }}&background=F1C40F&color=2C3E50&bold=true&size=200" alt="Foto" class="rounded-circle border shadow-sm" style="width: 220px; height: 220px; object-fit: cover;">
+                    {% else %}
+                        <img id="previewImagem" src="{{ url_for('static', filename='uploads/' + current_user.foto_perfil) }}" alt="Foto" class="rounded-circle border shadow-sm" style="width: 220px; height: 220px; object-fit: cover;">
+                    {% endif %}
+                </div>
+
+                <input type="file" id="inputFoto" name="foto_perfil" class="d-none" accept="image/png, image/jpeg, image/jpg" onchange="mostrarPreview(event)">
+
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <button type="button" class="btn btn-blue-system px-4 py-2" onclick="document.getElementById('inputFoto').removeAttribute('capture'); document.getElementById('inputFoto').click();">
+                        ☁️ CARREGAR IMAGEM
+                    </button>
+            </form>
+        </div>
+
+        <div class="card-footer bg-light border-top-0 py-3 d-flex justify-content-end align-items-center gap-4" style="background-color: #fafafa !important;">
+            <a href="/dashboard" class="text-decoration-none fw-bold text-secondary" style="font-size: 0.9rem;">CANCELAR</a>
+            <button type="button" class="btn btn-green-save shadow-sm" onclick="document.getElementById('formPerfil').submit();">SALVAR</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function mostrarPreview(event) {
+        const input = event.target;
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Atualiza a bolinha com a imagem que o usuário acabou de escolher
+                document.getElementById('previewImagem').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container-fluid mt-2 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark"><i class="fas fa-chart-line text-primary me-2"></i>Dashboard Financeiro</h2>
+        <span class="badge bg-secondary fs-6">Mês Atual</span>
+    </div>
+
+    <ul class="nav nav-pills mb-4 shadow-sm p-2 bg-white rounded" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" data-bs-toggle="pill" data-bs-target="#tab-vendas" type="button" role="tab">
+                <i class="fas fa-store me-2"></i>Visão de Vendas (Competência)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-success" data-bs-toggle="pill" data-bs-target="#tab-caixa" type="button" role="tab">
+                <i class="fas fa-university me-2"></i>Visão de Caixa (Recebimentos)
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="pills-tabContent">
+        
+        <div class="tab-pane fade show active" id="tab-vendas" role="tabpanel">
+            <div class="alert alert-primary border-0 shadow-sm small">
+                <i class="fas fa-info-circle me-1"></i> Mostra tudo o que a pizzaria <strong>vendeu e produziu</strong> neste mês, independentemente de quando o cliente vai pagar.
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 border-start border-4 border-secondary py-2">
+                        <div class="card-body">
+                            <div class="text-xs fw-bold text-secondary text-uppercase mb-1">Faturamento Bruto</div>
+                            <div class="h3 mb-0 fw-bold text-dark">R$ {{ "%.2f"|format(kpi_bruto) }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 border-start border-4 border-danger py-2">
+                        <div class="card-body">
+                            <div class="text-xs fw-bold text-danger text-uppercase mb-1">Taxas de Cartão</div>
+                            <div class="h3 mb-0 fw-bold text-dark">- R$ {{ "%.2f"|format(kpi_taxas) }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 border-start border-4 border-primary py-2 bg-light">
+                        <div class="card-body">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">Faturamento Líquido Real</div>
+                            <div class="h3 mb-0 fw-bold text-primary">R$ {{ "%.2f"|format(kpi_liquido) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="fw-bold text-muted mb-3">Vendas Diárias: Bruto x Líquido</h6>
+                <canvas id="chartVendas" height="80"></canvas>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-caixa" role="tabpanel">
+            <div class="alert alert-success border-0 shadow-sm small">
+                <i class="fas fa-info-circle me-1"></i> Mostra apenas o dinheiro que <strong>caiu ou vai cair na conta bancária</strong> neste mês (já com taxas descontadas).
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 border-start border-4 border-success py-2">
+                        <div class="card-body">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">Entradas Previstas no Mês</div>
+                            <div class="h3 mb-0 fw-bold text-dark">R$ {{ "%.2f"|format(kpi_entradas_caixa) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="fw-bold text-muted mb-3">Depósitos Diários na Conta</h6>
+                <canvas id="chartCaixa" height="80"></canvas>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Pegando os dados injetados pelo Python
+    const labelsVendas = JSON.parse('{{ labels_vendas|safe }}');
+    const dadosBruto = JSON.parse('{{ graf_bruto|safe }}');
+    const dadosLiquido = JSON.parse('{{ graf_liquido|safe }}');
+    
+    const labelsCaixa = JSON.parse('{{ labels_caixa|safe }}');
+    const dadosCaixa = JSON.parse('{{ graf_caixa|safe }}');
+
+    // 1. Gráfico de Vendas (Barras Duplas)
+    const ctxVendas = document.getElementById('chartVendas').getContext('2d');
+    new Chart(ctxVendas, {
+        type: 'bar',
+        data: {
+            labels: labelsVendas,
+            datasets: [
+                {
+                    label: 'Bruto (Cheio)',
+                    data: dadosBruto,
+                    backgroundColor: '#cbd5e1' // Cinza claro
+                },
+                {
+                    label: 'Líquido (Sua parte)',
+                    data: dadosLiquido,
+                    backgroundColor: '#3b82f6' // Azul
+                }
+            ]
+        },
+        options: { responsive: true, interaction: { mode: 'index', intersect: false } }
+    });
+
+    // 2. Gráfico de Caixa (Linha ou Barra Simples)
+    const ctxCaixa = document.getElementById('chartCaixa').getContext('2d');
+    new Chart(ctxCaixa, {
+        type: 'bar',
+        data: {
+            labels: labelsCaixa,
+            datasets: [{
+                label: 'Depósito em Conta (R$)',
+                data: dadosCaixa,
+                backgroundColor: '#10b981' // Verde
+            }]
+        },
+        options: { responsive: true }
+    });
+});
+</script>
+
+<style>
+    .nav-pills .nav-link { color: #555; transition: 0.3s; }
+    .nav-pills .nav-link.active { background-color: var(--bs-primary) !important; color: white !important; }
+    .nav-pills .nav-link.text-success.active { background-color: var(--bs-success) !important; color: white !important; }
+    .nav-pills .nav-link:hover:not(.active) { background-color: #f8f9fa; }
+</style>
+{% endblock %}

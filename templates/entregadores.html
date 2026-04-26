@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark"><i class="fas fa-motorcycle"></i> Gestão de Entregadores</h2>
+        <button class="btn btn-custom-azul fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#novoEntregador">
+            ➕ Novo Entregador
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr style="border-top: 3px solid var(--cor-amarelo);">
+                            <th class="ps-4">Nome</th>
+                            <th>Contato</th>
+                            <th>Veículo</th>
+                            <th>Placa</th>
+                            <th class="text-end pe-4">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in entregadores %}
+                        <tr>
+                            <td class="fw-bold text-dark ps-4">{{ e.nome }}</td>
+                            <td>
+                                {% if e.telefone %}
+                                <span class="d-none d-lg-inline me-2 fw-bold text-primary">{{ e.telefone }}</span>
+                                {% else %}
+                                <span class="text-muted small">Sem contato</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted">{{ e.veiculo }}</td>
+                            <td>
+                                <span class="badge bg-dark fs-6 font-monospace shadow-sm"
+                                    style="letter-spacing: 2px;">{{ e.placa }}</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="whatsapp://send?phone=55{{ e.telefone | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') }}"
+                                    class="btn btn-sm btn-custom-verde" title="Chamar no WhatsApp">
+                                    <i class="fab fa-whatsapp"></i> Chamar
+                                </a>
+                                <a href="{{ url_for('editar_entregador', id=e.id) }}"
+                                    class="btn btn-sm btn-custom-amarelo ms-1" title="Editar">
+                                    ✏️ Editar
+                                </a>
+                                <a href="{{ url_for('deletar_entregador', id=e.id) }}"
+                                    class="btn btn-sm btn-custom-vermelho-outline ms-1"
+                                    onclick="return confirm('Deseja remover este entregador?')" title="Excluir">
+                                    🗑️ Excluir
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-5">Nenhum entregador cadastrado no sistema.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="novoEntregador" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="{{ url_for('gerenciar_entregadores') }}" method="POST" class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-custom-azul text-white">
+                <h5 class="modal-title fw-bold">Cadastrar Entregador</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light p-4">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">Nome Completo</label>
+                    <input type="text" name="nome" class="form-control" maxlength="80" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">WhatsApp (Com DDD)</label>
+                    <input type="text" maxlength="11" name="telefone" id="telefone_entregador" class="form-control"
+                        placeholder="(00) 00000-0000" required>
+                </div>
+                <div class="row">
+                    <div class="col-md-7 mb-3">
+                        <label class="form-label small fw-bold text-muted">Veículo</label>
+                        <input type="text" name="veiculo" class="form-control" maxlength="7"
+                            placeholder="Ex: HONDA CG 160">
+                    </div>
+                    <div class="col-md-5 mb-3">
+                        <label class="form-label small fw-bold" style="color: var(--cor-vermelho);">Placa</label>
+                        <input type="text" name="placa" class="form-control font-monospace text-uppercase"
+                            style="border-color: var(--cor-vermelho);" maxlength="7" minlength="7" placeholder="ABC1D23"
+                            required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <button type="submit" class="btn btn-custom-azul w-100 fw-bold">Salvar Entregador</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Aproveitando a máscara global do base.html
+    $(document).ready(function () {
+        $('#telefone_entregador').mask('(00) 00000-0000');
+    });
+</script>
+{% endblock %}

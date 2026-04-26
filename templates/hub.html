@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .hub-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        border-radius: 15px;
+        text-decoration: none !important;
+    }
+    .hub-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    }
+    .hub-icon { font-size: 3.5rem; mb-3; }
+</style>
+
+<div class="container-fluid mt-4">
+    <h2 class="fw-bold mb-4">👋 Bem-vindo ao PizzaStock, {{ current_user.username }}!</h2>
+    <p class="text-muted mb-5">O que você deseja fazer agora?</p>
+
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+            <a href="/pdv" class="card shadow-sm h-100 border-0 bg-success text-white hub-card">
+                <div class="card-body text-center py-5">
+                    <div class="hub-icon">🛒</div>
+                    <h4 class="fw-bold text-white mt-3">Ir para o Caixa</h4>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <a href="/dashboard" class="card shadow-sm h-100 border-0 bg-primary text-white hub-card">
+                <div class="card-body text-center py-5">
+                    <div class="hub-icon">📈</div>
+                    <h4 class="fw-bold text-white mt-3">Dashboard</h4>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <a href="/relatorios" class="card shadow-sm h-100 border-0 bg-warning text-white hub-card">
+                <div class="card-body text-center py-5">
+                    <div class="hub-icon">📊</div>
+                    <h4 class="fw-bold text-white mt-3">Relatórios</h4>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <a href="/desperdicio" class="card shadow-sm h-100 border-0 bg-danger text-white hub-card">
+                <div class="card-body text-center py-5">
+                    <div class="hub-icon">🗑️</div>
+                    <h4 class="fw-bold text-white mt-3">Baixa / Desperdício</h4>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

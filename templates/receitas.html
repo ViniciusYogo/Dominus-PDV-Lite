@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-11 col-xxl-10">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-0">🍕 Cardápio e Preços</h2>
+                    <p class="text-muted small mb-0">Gerencie as categorias de preço e cadastre os sabores das pizzas.</p>
+                </div>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary fw-bold shadow-sm">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+
+            {% if current_user.is_admin %}
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header bg-warning border-0 py-3">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-tags"></i> 1. Tabela de Preços (Por Categoria)</h5>
+                </div>
+                <div class="card-body bg-light p-4">
+                    
+                    <form action="/salvar_tabela_preco" method="POST" class="row align-items-end g-3 mb-4 bg-white p-3 rounded shadow-sm border" id="formTabela">
+                        <div class="col-12 mb-2">
+                            <span class="badge bg-secondary mb-1">Nova Categoria ou Atualização</span>
+                            <p class="small text-muted mb-0">Defina os valores fixos para uma categoria. Se ela já existir, os preços serão atualizados para todas as pizzas vinculadas a ela.</p>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-dark small">Nome da Categoria</label>
+                            <input type="text" id="inputCategoria" name="categoria" class="form-control fw-bold border-dark" placeholder="Ex: TRADICIONAL" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold text-muted small">Broto (R$)</label>
+                            <input type="number" step="0.01" min="0" id="inputBroto" name="preco_broto" class="form-control text-success fw-bold" placeholder="0,00" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold text-muted small">Média (R$)</label>
+                            <input type="number" step="0.01" min="0" id="inputMedia" name="preco_media" class="form-control text-success fw-bold" placeholder="0,00" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold text-muted small">Grande (R$)</label>
+                            <input type="number" step="0.01" min="0" id="inputGrande" name="preco_grande" class="form-control text-success fw-bold" placeholder="0,00" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-muted small">Família (R$)</label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" min="0" id="inputFamilia" name="preco_familia" class="form-control text-success fw-bold border-success" placeholder="0,00" required>
+                                <button type="submit" class="btn btn-dark fw-bold px-3">
+                                    <i class="fas fa-save"></i> Salvar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-12 text-end mt-2" id="btnCancelarEdicao" style="display: none;">
+                            <button type="button" class="btn btn-sm btn-outline-danger fw-bold" onclick="limparFormTabela()">Cancelar Edição</button>
+                        </div>
+                    </form>
+
+                    <h6 class="fw-bold text-secondary mb-3">Categorias Ativas:</h6>
+                    <div class="row g-3">
+                        {% for tab in tabelas %}
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card border-0 shadow-sm h-100 position-relative">
+                                
+                                <button type="button" class="btn btn-sm btn-primary position-absolute top-0 end-0 m-2 me-5 rounded-circle shadow-sm" style="width: 28px; height: 28px; padding: 0; line-height: 28px;" title="Editar Preços" onclick="prepararEdicao('{{ tab.categoria }}', {{ tab.preco_broto }}, {{ tab.preco_media }}, {{ tab.preco_grande }}, {{ tab.preco_familia }})">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </button>
+                                
+                                <a href="{{ url_for('deletar_tabela', id=tab.id) }}" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle shadow-sm" style="width: 28px; height: 28px; padding: 0; line-height: 28px;" title="Excluir Categoria" onclick="return confirm('ATENÇÃO: Apagar a categoria não apaga as pizzas, mas elas ficarão órfãs. Continuar?')">
+                                    <i class="fas fa-times"></i>
+                                </a>
+
+                                <div class="card-header bg-dark text-white fw-bold py-2 border-0 pe-5">
+                                    {{ tab.categoria }}
+                                </div>
+                                <div class="card-body p-3 bg-white rounded-bottom">
+                                    <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                                        <span class="text-muted small">Broto:</span> 
+                                        <span class="fw-bold text-dark">R$ {{ "%.2f" | format(tab.preco_broto) | replace('.', ',') }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                                        <span class="text-muted small">Média:</span> 
+                                        <span class="fw-bold text-dark">R$ {{ "%.2f" | format(tab.preco_media) | replace('.', ',') }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                                        <span class="text-muted small">Grande:</span> 
+                                        <span class="fw-bold text-dark">R$ {{ "%.2f" | format(tab.preco_grande) | replace('.', ',') }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between pt-1">
+                                        <span class="text-muted small">Família:</span> 
+                                        <span class="fw-bold text-success">R$ {{ "%.2f" | format(tab.preco_familia) | replace('.', ',') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="col-12">
+                            <div class="alert alert-warning border-0 shadow-sm text-center py-4">
+                                <i class="fas fa-exclamation-triangle fs-4 mb-2 d-block"></i>
+                                Nenhuma categoria de preços cadastrada. Crie a primeira categoria acima.
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white fw-bold py-3 border-0">
+                    <h5 class="mb-0"><i class="fas fa-pizza-slice"></i> 2. Adicionar Sabor ao Cardápio</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('gerenciar_receitas') }}" method="POST" class="row g-3 align-items-end">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted">Nome da Pizza (Sabor)</label>
+                            <input type="text" name="nome" class="form-control border-primary form-control-lg fs-6" placeholder="Ex: CALABRESA ACEBOLADA" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-muted">Categoria (Define o Preço)</label>
+                            <select name="categoria" class="form-select border-primary form-control-lg fs-6" required>
+                                <option value="">-- Selecione a Categoria --</option>
+                                {% for tab in tabelas %}
+                                <option value="{{ tab.categoria }}">{{ tab.categoria }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow" {% if not tabelas %}disabled{% endif %}>
+                                ➕ SALVAR
+                            </button>
+                        </div>
+                        {% if not tabelas %}
+                        <div class="col-12 mt-2">
+                            <p class="text-danger small fw-bold mb-0"><i class="fas fa-lock"></i> O cadastro de sabores está bloqueado. Crie uma Categoria de Preços primeiro.</p>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-list text-primary"></i> Sabores Cadastrados no Sistema</h5>
+                    <div class="input-group w-auto">
+                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="filtroSabores" class="form-control border-start-0 bg-light" placeholder="Buscar sabor...">
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="tabelaSabores">
+                            <thead class="table-light text-muted small">
+                                <tr>
+                                    <th class="ps-4">Nome do Sabor</th>
+                                    <th>Categoria Vinculada</th>
+                                    <th class="text-center pe-4">Ações / Ficha Técnica</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in receitas %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark" style="font-size: 1.1rem;">{{ r.nome }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-dark px-3 py-2 rounded-pill shadow-sm">{{ r.categoria }}</span>
+                                    </td>
+                                    <td class="text-center pe-4">
+                                        <div class="btn-group shadow-sm">
+                                            <a href="{{ url_for('detalhes_receita', id=r.id) }}" class="btn btn-outline-primary" title="Editar Ficha Técnica">
+                                                <i class="fas fa-blender me-1"></i> Ficha Técnica
+                                            </a>
+                                            {% if current_user.is_admin %}
+                                            <button class="btn btn-outline-danger" onclick="confirmarExclusao({{ r.id }}, '{{ r.nome }}')" title="Remover Sabor">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-5 text-muted">
+                                        <i class="fas fa-pizza-slice fs-2 mb-3 text-light"></i>
+                                        <p class="mb-0">Nenhum sabor cadastrado ainda.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // Filtro de Busca
+    document.getElementById('filtroSabores').addEventListener('keyup', function() {
+        let termo = this.value.toLowerCase();
+        let linhas = document.querySelectorAll('#tabelaSabores tbody tr');
+        linhas.forEach(linha => {
+            let texto = linha.innerText.toLowerCase();
+            linha.style.display = texto.includes(termo) ? '' : 'none';
+        });
+    });
+
+    // Função para preencher o formulário de edição da Tabela de Preços
+    function prepararEdicao(categoria, broto, media, grande, familia) {
+        document.getElementById('inputCategoria').value = categoria;
+        document.getElementById('inputCategoria').readOnly = true; // Bloqueia o nome para não criar duplicata
+        
+        document.getElementById('inputBroto').value = broto;
+        document.getElementById('inputMedia').value = media;
+        document.getElementById('inputGrande').value = grande;
+        document.getElementById('inputFamilia').value = familia;
+        
+        document.getElementById('btnCancelarEdicao').style.display = 'block';
+        
+        // Rola a tela para o formulário
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Função para limpar e voltar ao modo "Criar"
+    function limparFormTabela() {
+        document.getElementById('inputCategoria').value = '';
+        document.getElementById('inputCategoria').readOnly = false;
+        
+        document.getElementById('inputBroto').value = '';
+        document.getElementById('inputMedia').value = '';
+        document.getElementById('inputGrande').value = '';
+        document.getElementById('inputFamilia').value = '';
+        
+        document.getElementById('btnCancelarEdicao').style.display = 'none';
+    }
+
+    function confirmarExclusao(id, nome) {
+        Swal.fire({
+            title: 'Arquivar Sabor?',
+            text: `Deseja mesmo remover a pizza "${nome}" do cardápio?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sim, remover',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `/deletar_receita/${id}`;
+            }
+        });
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% block content %}
+
+{% if current_user.is_admin %}
+
+<div class="row mt-4 mb-3">
+    <div class="col-12">
+        <h2 class="mb-1">Olá, {{ current_user.username|capitalize }}!! 👋</h2>
+        <p class="text-muted small">Navegue pelas abas abaixo para analisar a sua pizzaria:</p>
+    </div>
+</div>
+<div class="container-fluid mt-2">
+
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm border-0 bg-success text-white h-100">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-1">💰 Faturamento (Mês)</h6>
+                    <h3 class="fw-bold mb-0">{{ faturamento_mes | moeda_br }}</h3>
+                    <small class="text-white-50">Total de {{ qtd_vendas }} vendas concluídas</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div
+                class="card shadow-sm border-0 {% if lucro_bruto >= 0 %}bg-primary{% else %}bg-danger{% endif %} text-white h-100">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-1">📈 Lucro Bruto</h6>
+                    <h3 class="fw-bold mb-0">{{ lucro_bruto | moeda_br }}</h3>
+                    <small class="text-white-50">Faturamento menos Compras</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm border-0 bg-warning text-dark h-100">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-1">💳 Ticket Médio</h6>
+                    <h3 class="fw-bold mb-0">{{ ticket_medio | moeda_br }}</h3>
+                    <small class="text-dark-50">Gasto médio por cliente</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm border-0 bg-dark text-white h-100">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-1">🗑️ Perdas e Descartes</h6>
+                    <h3 class="fw-bold mb-0">{{ prejuizo_mes | moeda_br }}</h3>
+                    <small class="text-white-50">Vencimentos, lixo e pedidos estornados</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 p-3">
+                <h5 class="fw-bold text-success mb-3">📊 Faturamento Diário (Mês Atual)</h5>
+                <canvas id="chartFaturamento" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-pills mb-4" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold px-4" id="pills-visao-tab" data-bs-toggle="pill"
+                data-bs-target="#pills-visao" type="button" role="tab">📊 Visão Geral</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold px-4" id="pills-vendas-tab" data-bs-toggle="pill"
+                data-bs-target="#pills-vendas" type="button" role="tab">🍕 Vendas do Mês</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold px-4 position-relative" id="pills-alertas-tab" data-bs-toggle="pill"
+                data-bs-target="#pills-alertas" type="button" role="tab">
+                ⚠️ Alertas
+                {% if alertas_validade|length > 0 or alertas_estoque|length > 0 %}
+                <span
+                    class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle"></span>
+                {% endif %}
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="pills-tabContent">
+
+        <div class="tab-pane fade show active" id="pills-visao" role="tabpanel">
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card p-3 border-start border-4 border-success shadow-sm h-100">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Capital
+                            Imobilizado</small>
+                        <h3 class="text-success mb-0">{{ valor_total|moeda_br }}</h3>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card p-3 border-start border-4 border-info shadow-sm h-100">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Compras do
+                            Mês</small>
+                        <h3 class="text-info mb-0">{{ gastos_mes|moeda_br }}</h3>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card p-3 border-start border-4 border-danger shadow-sm h-100"
+                        style="background-color: #fff5f5;">
+                        <small class="text-danger text-uppercase fw-bold" style="font-size: 0.7rem;">Desperdício no
+                            Mês</small>
+                        <h3 class="text-danger mb-0">{{ prejuizo_mes|default(0)|moeda_br }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white fw-bold text-secondary">🍕 Despesas por Fornecedor</div>
+                        <div class="card-body">
+                            <div style="height: 250px;"><canvas id="graficoFornecedores"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white fw-bold text-secondary">📊 Evolução de Gastos (6 Meses)</div>
+                        <div class="card-body">
+                            <div style="height: 250px;"><canvas id="graficoMeses"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="pills-vendas" role="tabpanel">
+            <div class="card shadow-sm p-4">
+                <h5 class="fw-bold text-primary mb-3">🏆 Pizzas / Pratos Mais Produzidos no Mês</h5>
+                <p class="text-muted small">Este gráfico lê automaticamente os registos da produção.</p>
+                {% if labels_vendas|length > 0 %}
+                <div style="height: 350px; width: 100%;">
+                    <canvas id="graficoVendas"></canvas>
+                </div>
+                {% else %}
+                <div class="alert alert-light border text-center py-5">
+                    Nenhuma produção registrada neste mês ainda.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="pills-alertas" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card p-4 h-100 shadow-sm border-danger border-opacity-50">
+                        <h5 class="text-danger mb-3">⚠️ Atenção à Validade</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th>Vence em</th>
+                                        <th>Qtd</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lote in alertas_validade %}
+                                    <tr>
+                                        <td><strong>{{ lote.produto.nome }}</strong></td>
+                                        <td><span class="badge bg-danger">{{ lote.validade.strftime('%d/%m/%Y')
+                                                }}</span></td>
+                                        <td>{{ "%.2f"|format(lote.quantidade) }} {{ lote.produto.unidade }}</td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-muted text-center py-3">Tudo certo com as validades!
+                                            🎉</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card p-4 h-100 shadow-sm border-warning border-opacity-50">
+                        <h5 class="text-warning mb-3">🛒 Necessário Comprar</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th>Atual</th>
+                                        <th>Mínimo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in alertas_estoque %}
+                                    <tr>
+                                        <td><strong>{{ p.nome }}</strong></td>
+                                        <td class="text-danger fw-bold">{{ "%.2f"|format(p.total_atual) }}</td>
+                                        <td class="text-muted">{{ p.estoque_minimo }}</td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-muted text-center py-3">Estoque abastecido! ✅</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% else %}
+<div class="container mt-5 pt-4 text-center">
+    <h1 class="display-4 mb-3">🔒 Acesso Restrito</h1>
+    <p class="text-muted mb-5 lead">Olá, {{ current_user.username|capitalize }}! Você não tem permissão para visualizar
+        o Dashboard Financeiro. Utilize o menu lateral para navegar nas suas áreas permitidas.</p>
+</div>
+{% endif %}
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    $(document).ready(function () {
+        {% if current_user.is_admin %}
+
+        // Gráfico 1: Fornecedores
+        const ctxFornecedores = document.getElementById('graficoFornecedores').getContext('2d');
+        new Chart(ctxFornecedores, {
+            type: 'doughnut',
+            data: {
+                labels: {{ labels_fornecedores | safe }},
+        datasets: [{
+            data: {{ valores_fornecedores | safe }},
+        backgroundColor: [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+            '#FF9F40', '#8AC926', '#1982C4', '#F15BB5', '#F94144',
+            '#F3722C', '#F8961E', '#F9C74F', '#90BE6D', '#43AA8B',
+            '#577590', '#E0B1CB', '#2D6A4F', '#D90429', '#0077B6'
+        ],
+        borderWidth: 2,
+        borderColor: '#FEF9E7' 
+                }]
+            },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    boxWidth: 15,
+                    padding: 15,
+                    font: { family: "'Poppins', sans-serif", size: 11 }
+                }
+            }
+        }
+    }
+        });
+
+    // Gráfico 2: Faturamento Diário (Visão do Dono)
+    const ctxFaturamento = document.getElementById('chartFaturamento').getContext('2d');
+    new Chart(ctxFaturamento, {
+        type: 'line',
+        data: {
+            labels: {{ labels_faturamento | safe }},
+        datasets: [{
+            label: 'Faturamento R$',
+            data: {{ valores_faturamento | safe }},
+        backgroundColor: 'rgba(40, 167, 69, 0.2)',
+        borderColor: '#28a745',
+        borderWidth: 2,
+        pointBackgroundColor: '#28a745',
+        fill: true,
+        tension: 0.4
+                }]
+            },
+        options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    }
+        });
+
+    // Gráfico 3: Evolução 6 Meses
+    const ctxM = document.getElementById('graficoMeses');
+    if (ctxM) {
+        new Chart(ctxM, {
+            type: 'bar',
+            data: {
+                labels: {{ meses_labels | tojson | safe }},
+    datasets: [{ label: 'Gasto (R$)', data: {{ gastos_meses | tojson | safe }}, backgroundColor: '#F1C40F', borderRadius: 4 }]
+                },
+    options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+    // Gráfico 4: VENDAS (PRODUÇÃO)
+    const ctxV = document.getElementById('graficoVendas');
+    if (ctxV) {
+        new Chart(ctxV, {
+            type: 'bar',
+            data: {
+                labels: {{ labels_vendas | tojson | safe }},
+    datasets: [{
+        label: 'Unidades Produzidas',
+        data: {{ valores_vendas | tojson | safe }},
+        backgroundColor: '#0dcaf0',
+        borderWidth: 0,
+        borderRadius: 6
+                    }]
+                },
+    options: {
+        indexAxis: 'y',
+            responsive: true,
+                maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+    }
+            });
+        }
+
+    {% endif %}
+    });
+</script>
+
+{% endblock %}

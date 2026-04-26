@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<div class="row justify-content-center">
+    <div class="col-md-6 mt-3">
+
+        <div class="card p-4 shadow-sm border-0 mb-4 border-top border-4 border-primary">
+            <div class="d-flex align-items-center mb-4">
+                <span class="fs-4 me-2">👤</span>
+                <h4 class="mb-0 text-primary">Editar Usuário</h4>
+            </div>
+
+            <form action="/editar_usuario/{{ usuario.id }}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Nome de Usuário (Login)</label>
+                    <input type="text" name="username" maxlength="30" class="form-control"
+                        value="{{ usuario.username }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">E-mail</label>
+                    <input type="email" name="email" class="form-control" placeholder="exemplo@email.com"
+                        value="{{ usuario.email }}" required>
+                </div>
+
+                {% if current_user.is_admin and current_user.id != usuario.id %}
+                <div class="form-check form-switch mb-4 p-3 bg-light rounded border">
+                    <input class="form-check-input ms-0 me-2" type="checkbox" role="switch" name="is_admin" id="isAdmin"
+                        {% if usuario.is_admin %}checked{% endif %}>
+                    <label class="form-check-label fw-bold text-danger" for="isAdmin">
+                        Privilégios de Administrador
+                    </label>
+                    <div class="form-text small mt-1">
+                        Admins podem excluir usuários, mudar senhas e ver relatórios completos.
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-success flex-grow-1 fw-bold">Salvar Dados</button>
+                    <a href="/usuarios" class="btn btn-secondary">Voltar</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="card p-4 shadow-sm border-0 border-top border-4 border-danger">
+            <div class="d-flex align-items-center mb-4">
+                <span class="fs-4 me-2">🔐</span>
+                <h4 class="mb-0 text-danger">Segurança (Trocar Senha)</h4>
+            </div>
+
+            <form action="/mudar_senha" method="POST">
+                <input type="hidden" name="usuario_id" maxlength="30" value="{{ usuario.id }}">
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Senha Atual</label>
+                    <div class="input-group">
+                        <input type="password" name="senha_atual" maxlength="30" id="senha_atual" class="form-control"
+                            placeholder="Digite a senha antiga" required>
+                        <button class="btn btn-outline-secondary" type="button"
+                            onclick="mostrarSenha('senha_atual', 'icone_atual')"
+                            style="border-color: #ced4da; background-color: white;">
+                            <i id="icone_atual" class="bi bi-eye text-secondary"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-primary">Nova Senha</label>
+                    <div class="input-group">
+                        <input type="password" name="nova_senha" maxlength="30" id="nova_senha"
+                            class="form-control border-primary" placeholder="Crie uma nova senha (opcional)">
+                        <button class="btn btn-outline-primary" type="button"
+                            onclick="mostrarSenha('nova_senha', 'icone_nova')" style="background-color: white;">
+                            <i id="icone_nova" class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-outline-danger w-100 fw-bold">Salvar Nova Senha</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function mostrarSenha(inputId, iconId) {
+        var campoInput = document.getElementById(inputId);
+        var icone = document.getElementById(iconId);
+
+        if (campoInput.type === "password") {
+            // Revela a senha e muda o ícone para o "olho cortado"
+            campoInput.type = "text";
+            icone.classList.remove("bi-eye");
+            icone.classList.add("bi-eye-slash");
+        } else {
+            // Esconde a senha e volta o ícone para o "olho normal"
+            campoInput.type = "password";
+            icone.classList.remove("bi-eye-slash");
+            icone.classList.add("bi-eye");
+        }
+    }
+</script>
+{% endblock %}

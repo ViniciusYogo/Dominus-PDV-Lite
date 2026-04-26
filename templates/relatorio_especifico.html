@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    @media print {
+
+        #sidebar,
+        .navbar-top,
+        .d-print-none,
+        form {
+            display: none !important;
+        }
+
+        #page-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        body {
+            background-color: white !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        table {
+            page-break-inside: auto;
+        }
+
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+
+        thead {
+            display: table-header-group;
+        }
+    }
+</style>
+
+<div class="container-fluid mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+        <h2>{{ titulo }}</h2>
+        <div>
+            {% if request.args.get('gerar') %}
+            <a href="{{ url_for('relatorio_especifico', tipo=tipo, gerar='sim', exportar_pdf='sim', data_inicio=d_ini, data_fim=d_fim, ordem=ordem, usuario=f_user, acao=f_acao, produto=f_produto, fornecedor=f_fornecedor) }}"
+                class="btn btn-primary me-2 d-print-none">🖨️ Exportar PDF</a>
+            {% endif %}
+            <a href="/relatorios" class="btn btn-outline-secondary">⬅️ Voltar</a>
+        </div>
+    </div>
+
+    <div class="d-none d-print-block mb-4 text-center">
+        <h2>{{ empresa_nome }}</h2>
+        <h4>{{ titulo }}</h4>
+        <p class="text-muted">Relatório gerado em: <span id="data-impressao"></span></p>
+        <script>document.getElementById('data-impressao').innerText = new Date().toLocaleString('pt-BR');</script>
+        {% if d_ini and d_fim %}
+        <p><strong>Período:</strong> {{ d_ini[8:10] }}/{{ d_ini[5:7] }}/{{ d_ini[0:4] }} até {{ d_fim[8:10] }}/{{
+            d_fim[5:7] }}/{{ d_fim[0:4] }}</p>
+        {% endif %}
+        <hr>
+    </div>
+
+    <form method="GET" action="/relatorio/{{ tipo }}"
+        class="row g-3 align-items-end mb-4 bg-white p-3 shadow-sm rounded d-print-none"
+        style="border: 1px solid #eee;">
+        <input type="hidden" name="gerar" value="sim">
+
+        <div class="col-md-2">
+            <label class="form-label small fw-bold">Data Inicial</label>
+            <input type="date" name="data_inicio" class="form-control" value="{{ d_ini or '' }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-bold">Data Final</label>
+            <input type="date" name="data_fim" class="form-control" value="{{ d_fim or '' }}">
+        </div>
+
+        {% if tipo == 'auditoria' %}
+        <div class="col-md-2">
+            <label class="form-label small fw-bold">Colaborador</label>
+            <select name="usuario" class="form-select">
+                <option value="">Todos</option>
+                {% for u in todos_usuarios %}
+                <option value="{{ u }}" {% if f_user==u %}selected{% endif %}>{{ u|capitalize }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-bold">Ação</label>
+            <select name="acao" class="form-select">
+                <option value="">Todas</option>
+                <option value="LOGIN" {% if f_acao=='LOGIN' %}selected{% endif %}>Login</option>
+                <option value="ENTRADA" {% if f_acao=='ENTRADA' %}selected{% endif %}>Entrada</option>
+                <option value="SAÍDA" {% if f_acao=='SAÍDA' %}selected{% endif %}>Saída</option>
+                <option value="CADASTRO" {% if f_acao=='CADASTRO' %}selected{% endif %}>Cadastro</option>
+                <option value="EXCLUSÃO" {% if f_acao=='EXCLUSÃO' %}selected{% endif %}>Exclusão</option>
+                <option value="EDIÇÃO" {% if f_acao=='EDIÇÃO' %}selected{% endif %}>Edição</option>
+                <option value="DESCARTE" {% if f_acao=='DESCARTE' %}selected{% endif %}>Descarte</option>
+            </select>
+        </div>
+        {% elif tipo in ['gastos', 'consumo'] %}
+        <div class="col-md-3">
+            <label class="form-label small fw-bold">Filtrar Produto</label>
+            <select name="produto" class="form-select">
+                <option value="">Todos os Produtos</option>
+                {% for p in todos_produtos %}
+                <option value="{{ p }}" {% if f_produto==p %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+                <option value="OUTROS" {% if f_produto=='OUTROS' %}selected{% endif %}>Outros (Inativos)</option>
+            </select>
+        </div>
+        {% elif tipo == 'fornecedores' %}
+        <div class="col-md-3">
+            <label class="form-label small fw-bold">Fornecedor</label>
+            <select name="fornecedor" class="form-select">
+                <option value="">Todos os Fornecedores</option>
+                {% for f in todos_fornecedores %}
+                <option value="{{ f }}" {% if f_fornecedor==f %}selected{% endif %}>{{ f }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% elif tipo == 'desperdicio' %}
+        <div class="col-md-4">
+            <label class="form-label small fw-bold">Filtrar por Colaborador</label>
+            <select name="usuario" class="form-select">
+                <option value="">Todos os Funcionários</option>
+                {% for u in todos_usuarios %}
+                <option value="{{ u }}" {% if f_user==u %}selected{% endif %}>{{ u|capitalize }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        <div class="col-md-2">
+            <label class="form-label small fw-bold">Ordem</label>
+            <select name="ordem" class="form-select">
+                <option value="maior" {% if ordem=='maior' %}selected{% endif %}>
+                    {% if is_auditoria %}Mais Recentes{% else %}Maior para Menor{% endif %}
+                </option>
+                <option value="menor" {% if ordem=='menor' %}selected{% endif %}>
+                    {% if is_auditoria %}Mais Antigos{% else %}Menor para Maior{% endif %}
+                </option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-dark w-100 mb-1">Gerar</button>
+            <a href="/relatorio/{{ tipo }}" class="btn btn-outline-danger w-100 text-decoration-none"
+                style="font-size: 0.8rem;">Limpar Filtros</a>
+        </div>
+    </form>
+
+    {% if request.args.get('gerar') %}
+    <div class="card shadow-sm p-3">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mt-2">
+                <thead class="table-dark">
+                    <tr>
+                        {% for cabecalho in cabecalhos %}
+                        <th {% if loop.last and not is_auditoria %}class="text-end" {% endif %}>{{ cabecalho }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set lista_dados = dados.items if is_paginated else dados %}
+
+                    {% for item in lista_dados %}
+
+                    {% if tipo == 'fechamento' %}
+                    <tr>
+                        <td class="small">{{ item.data }}</td>
+                        <td class="fw-bold text-dark">{{ item.cliente }}</td>
+                        <td><span class="badge border border-secondary text-secondary">{{ item.pagamento }}</span></td>
+                        <td class="small text-muted">{{ item.itens }}</td>
+                        <td class="text-end fw-bold text-success">{{ item.valor | moeda_br }}</td>
+                    </tr>
+
+                    {% elif is_auditoria %}
+                    <tr>
+                        <td class="small">{{ item.data.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td class="fw-bold text-secondary">{{ item.usuario|capitalize }}</td>
+                        <td><span class="badge border border-secondary text-secondary">{{ item.acao }}</span></td>
+                        <td class="small">{{ item.descricao }}</td>
+                    </tr>
+
+                    {% else %}
+                    <tr>
+                        <td><strong># {% if is_paginated %}{{ (dados.page - 1) * dados.per_page + loop.index }}{% else
+                                %}{{ loop.index }}{% endif %}</strong></td>
+                        <td class="fw-bold">{{ item.nome }}</td>
+                        <td class="text-end fw-bold">
+                            {% if is_moeda %}
+                            {% if item.valor != 0.0 %}
+                            <span class="{% if item.valor < 0 %}text-danger{% else %}text-success{% endif %}">
+                                {{ item.valor | moeda_br }}
+                            </span>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-primary">{{ "%.2f"|format(item.valor) }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Nenhum dado encontrado para os filtros
+                            selecionados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated and dados.pages > 1 %}
+        <nav aria-label="Paginação do Relatório" class="mt-4 d-print-none">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not dados.has_prev %}disabled{% endif %}">
+                    <a class="page-link text-dark"
+                        href="{{ url_for('relatorio_especifico', tipo=tipo, page=dados.prev_num if dados.has_prev else 1, gerar='sim', data_inicio=d_ini, data_fim=d_fim, ordem=ordem, usuario=f_user, acao=f_acao, produto=f_produto, fornecedor=f_fornecedor) }}">
+                        ⬅️ Anterior
+                    </a>
+                </li>
+                <li class="page-item active">
+                    <span class="page-link bg-dark border-dark">Página {{ dados.page }} de {{ dados.pages }}</span>
+                </li>
+                <li class="page-item {% if not dados.has_next %}disabled{% endif %}">
+                    <a class="page-link text-dark"
+                        href="{{ url_for('relatorio_especifico', tipo=tipo, page=dados.next_num if dados.has_next else 1, gerar='sim', data_inicio=d_ini, data_fim=d_fim, ordem=ordem, usuario=f_user, acao=f_acao, produto=f_produto, fornecedor=f_fornecedor) }}">
+                        Próxima ➡️
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+
+    {% else %}
+    <div class="card shadow-sm p-5 text-center text-muted" style="border: 2px dashed #ccc; background: transparent;">
+        <h1 class="display-4 mb-3">📊</h1>
+        <h5>Pronto para gerar!</h5>
+        <p class="mb-0">Escolha os filtros desejados e clique no botão <strong>"Gerar"</strong>.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% if exportar == 'sim' %}
+<div id="tela-carregamento"
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #f8f9fa; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    <div id="icone-loading" class="spinner-border text-primary mb-3"
+        style="width: 4rem; height: 4rem; border-width: 0.4rem;" role="status"></div>
+    <h2 id="texto-loading" class="fw-bold text-dark">Gerando Relatório... 🖨️</h2>
+    <p class="text-muted">Por favor, aguarde o download.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+    window.onload = function () {
+        // Trava a tela e mostra o loading
+        document.body.style.overflow = 'hidden';
+
+        setTimeout(function () {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.getWidth();
+
+            // 🔥 A SOLUÇÃO: Função para limpar emojis e caracteres não suportados pela fonte do PDF
+            function limparTexto(texto) {
+                // Expressão Regular que mantém apenas letras latinas, números, acentos e pontuação
+                return texto.replace(/[^\x20-\x7E\xA0-\xFF]/g, '').trim();
+            }
+
+            // 1. Coleta dos Textos do HTML e aplica a limpeza!
+            let nomeEmpresaRaw = document.querySelector('.d-print-block h2').innerText;
+            let nomeRelatorioRaw = document.querySelector('.d-print-block h4').innerText;
+
+            let nomeEmpresa = limparTexto(nomeEmpresaRaw);
+            let nomeRelatorio = limparTexto(nomeRelatorioRaw);
+            let dataGeracao = "Relatorio gerado em: " + new Date().toLocaleString('pt-BR');
+
+            let periodoElem = document.querySelector('.d-print-block p strong');
+            let textoPeriodo = "";
+            if (periodoElem && periodoElem.parentElement.innerText.includes('Período:')) {
+                textoPeriodo = limparTexto(periodoElem.parentElement.innerText);
+            }
+
+            // ==========================================
+            // 🎨 DESIGN CLEAN & CENTRALIZADO 
+            // ==========================================
+            doc.setTextColor(33, 37, 41);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(20);
+            doc.text(nomeEmpresa, pageWidth / 2, 20, { align: "center" });
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(14);
+            doc.text(nomeRelatorio, pageWidth / 2, 28, { align: "center" });
+
+            doc.setTextColor(120, 120, 120);
+            doc.setFontSize(10);
+
+            let posYData = 34;
+            let startYTable = 45;
+
+            if (textoPeriodo !== "") {
+                doc.text(dataGeracao, pageWidth / 2, posYData, { align: "center" });
+                doc.text(textoPeriodo, pageWidth / 2, posYData + 6, { align: "center" });
+                startYTable = 52;
+            } else {
+                doc.text(dataGeracao, pageWidth / 2, posYData, { align: "center" });
+            }
+
+            doc.setDrawColor(220, 220, 220);
+            doc.setLineWidth(0.3);
+            doc.line(14, startYTable - 6, pageWidth - 14, startYTable - 6);
+
+            // ==========================================
+            // 📊 DESENHO DA TABELA MINIMALISTA
+            // ==========================================
+            doc.autoTable({
+                html: '.table',
+                startY: startYTable,
+                theme: 'plain',
+                styles: {
+                    font: 'helvetica',
+                    fontSize: 9,
+                    cellPadding: 4,
+                    textColor: [40, 40, 40],
+                    lineWidth: { bottom: 0.2 },
+                    lineColor: [230, 230, 230]
+                },
+                headStyles: {
+                    fillColor: [33, 37, 41],
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    lineWidth: 0
+                },
+                didParseCell: function (data) {
+                    if (data.section === 'body') {
+                        if (data.column.index === 0) {
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+
+                        let textoCelula = data.cell.text.join(' ');
+                        
+                        // Se encontrar o R$, alinha pra direita e avalia a cor
+                        if (textoCelula.includes('R$')) {
+                            data.cell.styles.halign = 'right';
+                            data.cell.styles.fontStyle = 'bold';
+                            
+                            // Se tiver um sinal de menos '-', fica vermelho. Senão, fica verde!
+                            if (textoCelula.includes('-')) {
+                                data.cell.styles.textColor = [220, 53, 69]; // Vermelho
+                            } else {
+                                data.cell.styles.textColor = [25, 135, 84]; // Verde
+                            }
+                        }
+                    }
+                    if (data.section === 'head' && data.cell.raw && data.cell.raw.classList && data.cell.raw.classList.contains('text-end')) {
+                        data.cell.styles.halign = 'right';
+                    }
+                }
+            });
+
+            // 5. Salva o arquivo!
+            // Usa o nome limpo (sem emojis) para não bugar o Windows na hora de salvar
+            let nomeArquivo = nomeRelatorio.replace(/ /g, "_") + '.pdf';
+            doc.save(nomeArquivo);
+
+            // 6. Atualiza a tela de carregamento e volta pro sistema
+            document.getElementById('icone-loading').style.display = 'none';
+            document.getElementById('texto-loading').innerHTML = 'Download Concluído! ✅';
+            document.querySelector('#tela-carregamento p').innerText = 'Retornando ao sistema...';
+
+            setTimeout(function () {
+                window.history.back();
+            }, 1500);
+
+        }, 500);
+    };
+</script>
+{% endif %}
+
+{% endblock %}

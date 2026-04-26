@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container .select2-selection--single {
+        height: 38px;
+        border: 1px solid #ced4da;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 38px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+</style>
+
+<div class="container-fluid mt-4 mb-5">
+    <div class="mb-4 d-flex justify-content-between align-items-start">
+        <div>
+            <a href="/receitas" class="btn btn-outline-secondary btn-sm mb-3">⬅️ Voltar para Cardápio</a>
+            <h2 class="fw-bold text-dark d-flex align-items-center">
+                🍕 Sabor: {{ receita.nome }}
+                <span class="badge bg-dark text-white border fs-6 ms-3">{{ receita.categoria }}</span>
+            </h2>
+            <p class="text-muted">Gerencie os tamanhos deste sabor e seus respectivos ingredientes abaixo.</p>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button class="btn btn-custom-verde btn-sm fw-bold shadow-sm" data-bs-toggle="modal"
+                data-bs-target="#novoTamanhoModal">
+                ➕ Novo Tamanho
+            </button>
+            <button class="btn btn-custom-amarelo btn-sm fw-bold shadow-sm" data-bs-toggle="modal"
+                data-bs-target="#editarReceitaModal">
+                ✏️ Renomear Sabor
+            </button>
+            <a href="/deletar_receita/{{ receita.id }}" class="btn btn-danger btn-sm fw-bold"
+                onclick="return confirm('Tem certeza que deseja arquivar TODO esse sabor? O histórico será mantido.');">
+
+                🗑️ Arquivar Sabor
+
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            {% for var in receita.variacoes %}
+            <div class="card shadow-sm border-0 mb-4" style="border-left: 5px solid var(--cor-azul) !important;">
+
+                <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 fw-bold" style="color: var(--cor-azul);">📏 Tamanho: <span class="text-dark">{{
+                            var.tamanho }}</span>
+                    </h5>
+                    <div>
+                        <span class="badge bg-success fs-6 me-2 shadow-sm">Preço: R$ {{ "%.2f"|format(var.preco_venda)
+                            }}</span>
+                        <a href="/remover_tamanho/{{ var.id }}" class="btn btn-sm btn-custom-vermelho-outline"
+                            onclick="return confirm('Apagar este tamanho e todos os seus ingredientes?');">🗑️
+                            Excluir</a>
+                    </div>
+                </div>
+
+                <div class="card-body p-4 bg-light">
+                    <form action="/receita/{{ receita.id }}" method="POST"
+                        class="row g-2 align-items-end mb-4 bg-white p-3 border rounded shadow-sm">
+                        <input type="hidden" name="variacao_id" value="{{ var.id }}">
+
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold text-muted">Produto do Estoque</label>
+                            <select name="produto_id" class="form-select select2" required>
+                                <option value="" disabled selected>Buscar ingrediente...</option>
+                                {% for p in produtos %}
+                                <option value="{{ p.id }}">{{ p.nome }} ({% if p.unidade == 'KG' %}g{% elif p.unidade ==
+                                    'L' %}ml{% else %}Un{% endif %})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Quantidade (em gramas/ml/un)</label>
+                            <input type="number" step="0.5" name="quantidade" min="0"
+                                class="form-control border-primary" placeholder="Ex: 200" required>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-custom-azul w-100 fw-bold">➕ Adicionar</button>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive bg-white rounded shadow-sm">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Ingrediente</th>
+                                    <th>Custo no Estoque (Baixa)</th>
+                                    <th class="text-end pe-3">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in var.ingredientes %}
+                                <tr>
+                                    <td class="fw-bold ps-3 text-dark">{{ item.produto.nome }}</td>
+                                    <td class="text-primary fw-bold">
+                                        {% if item.produto.unidade in ['KG', 'L'] %}
+                                        {{ "%.0f"|format(item.quantidade * 1000) }} {% if item.produto.unidade == 'KG'
+                                        %}g{% else %}ml{% endif %}
+                                        {% else %}
+                                        {{ "%.1f"|format(item.quantidade) }} {{ item.produto.unidade }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <a href="/remover_ingrediente/{{ item.id }}"
+                                            class="btn btn-sm btn-custom-vermelho-outline"
+                                            onclick="return confirm('Remover este ingrediente?');">Remover</a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-3">Ficha técnica vazia para este
+                                        tamanho.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-warning text-center p-5 shadow-sm">
+                <h4>Nenhum tamanho cadastrado!</h4>
+                <p>Use o botão verde lá em cima para adicionar os tamanhos e preços desta pizza.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="novoTamanhoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-custom-verde text-white">
+                <h5 class="modal-title fw-bold">➕ Adicionar Novo Tamanho</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <form action="/adicionar_tamanho_sabor/{{ receita.id }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted">Tamanho</label>
+                        <select name="tamanho" class="form-select border-primary" required>
+                            <option value="" selected disabled>Escolha o tamanho...</option>
+                            <option value="Broto">Broto</option>
+                            <option value="Pequena">Pequena</option>
+                            <option value="Média">Média</option>
+                            <option value="Grande">Grande</option>
+                            <option value="Família">Família</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted">Preço de Venda (R$)</label>
+                        <input type="number" step="0.01" name="preco_venda" class="form-control border-success"
+                            placeholder="0.00" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="submit" class="btn btn-custom-verde w-100 fw-bold">Salvar Tamanho</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editarReceitaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-custom-amarelo">
+                <h5 class="modal-title fw-bold text-dark">Editar Informações Base</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/editar_receita/{{ receita.id }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted">Nome do Sabor</label>
+                        <input type="text" name="nome" class="form-control" value="{{ receita.nome }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted">Categoria</label>
+                        <select name="categoria" class="form-select border-success" required>
+                            <option value="TRADICIONAL" {% if receita.categoria=='TRADICIONAL' %}selected{% endif %}>
+                                Tradicional</option>
+                            <option value="ESPECIAL" {% if receita.categoria=='ESPECIAL' %}selected{% endif %}>Especial
+                            </option>
+                            <option value="PREMIUM" {% if receita.categoria=='PREMIUM' %}selected{% endif %}>Premium
+                            </option>
+                            <option value="DOCE" {% if receita.categoria=='DOCE' %}selected{% endif %}>Doce</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="submit" class="btn btn-custom-azul w-100 fw-bold">Salvar Nome</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('.select2').select2({
+            width: '100%',
+            language: { noResults: function () { return "Produto não encontrado"; } }
+        });
+    });
+</script>
+
+{% endblock %}

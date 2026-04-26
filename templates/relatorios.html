@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .card-hover {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+
+    .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+<div class="container-fluid mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📈 Painel de Relatórios</h2>
+    </div>
+
+    <div class="row mb-5">
+
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="/relatorio/gastos" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-danger card-hover">
+                    <div class="card-body text-center py-4">
+                        <h1 class="display-4 mb-3">💸</h1>
+                        <h5 class="card-title text-danger fw-bold">Gastos por Produto</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="/relatorio/vendas" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-primary card-hover">
+                    <div class="card-body text-center py-4">
+                        <h1 class="display-4 mb-3">💵</h1>
+                        <h5 class="card-title text-primary fw-bold">Faturamento (Vendas)</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="/relatorio/consumo" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-primary card-hover">
+                    <div class="card-body text-center py-4">
+                        <h1 class="display-4 mb-3">📦</h1>
+                        <h5 class="card-title text-primary fw-bold">Consumo e Volume</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="/relatorio/fornecedores" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-success card-hover">
+                    <div class="card-body text-center py-4">
+                        <h1 class="display-4 mb-3">🤝</h1>
+                        <h5 class="card-title text-success fw-bold">Gastos por Fornecedor</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="/relatorio/fechamento" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-success card-hover">
+                    <div class="card-body text-center py-4">
+                        <h1 class="display-4 mb-3">💰</h1>
+                        <h5 class="card-title text-success fw-bold">Fechamento de Caixa</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="/relatorio/faturamento" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-dark card-hover">
+                    <div class="card-body text-center py-4">
+                        <h1 class="display-4 mb-3">📈</h1>
+                        <h5 class="card-title text-dark fw-bold">DRE (Lucro Líquido)</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="/relatorio/comissao" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-warning card-hover">
+                    <div class="card-body text-center py-4">
+                        <h1 class="display-4 mb-3">🛵</h1>
+                        <h5 class="card-title text-warning fw-bold">Comissões (Entregas)</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="/relatorio/producao" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-info card-hover">
+                    <div class="card-body text-center py-4">
+                        <h1 class="display-4 mb-3">🍕</h1>
+                        <h5 class="card-title text-info fw-bold">Ranking de Produção</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="/relatorio/auditoria" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-warning card-hover">
+                    <div class="card-body text-center py-4">
+                        <h1 class="display-4 mb-3">🕵️</h1>
+                        <h5 class="card-title text-warning fw-bold">Auditoria do Sistema</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="/relatorio/entregadores" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-secondary card-hover">
+                    <div class="card-body text-center py-4">
+                        <h1 class="display-4 mb-3">🛵</h1>
+                        <h5 class="card-title text-secondary fw-bold">Vendas por Entregador</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="/relatorio/desperdicio" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-danger card-hover">
+                    <div class="card-body text-center py-4">
+                        <h1 class="display-4 mb-3">🗑️</h1>
+                        <h5 class="card-title text-danger fw-bold">Desperdício</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
